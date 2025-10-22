@@ -3,48 +3,72 @@ import * as z from 'zod'
 import type { FormSubmitEvent, AuthFormField } from '@nuxt/ui'
 
 const toast = useToast()
+const router = useRouter()
 
-const fields: AuthFormField[] = [{
-  name: 'email',
-  type: 'email',
-  label: 'Email',
-  placeholder: 'Enter your email',
-  required: true
-}, {
-  name: 'password',
-  label: 'Password',
-  type: 'password',
-  placeholder: 'Enter your password',
-  required: true
-}, {
-  name: 'remember',
-  label: 'Remember me',
-  type: 'checkbox'
-}]
-
-const providers = [{
-  label: 'Google',
-  icon: 'i-simple-icons-google',
-  onClick: () => {
-    toast.add({ title: 'Google', description: 'Login with Google' })
+// Champs du formulaire
+const fields: AuthFormField[] = [
+  {
+    name: 'email',
+    type: 'email',
+    label: 'Email',
+    placeholder: 'Entrez votre adresse e-mail',
+    required: true
+  },
+  {
+    name: 'password',
+    label: 'Mot de passe',
+    type: 'password',
+    placeholder: 'Entrez votre mot de passe',
+    required: true
   }
-}, {
-  label: 'GitHub',
-  icon: 'i-simple-icons-github',
-  onClick: () => {
-    toast.add({ title: 'GitHub', description: 'Login with GitHub' })
-  }
-}]
+]
 
+// Validation Zod
 const schema = z.object({
-  email: z.email('Invalid email'),
-  password: z.string('Password is required').min(8, 'Must be at least 8 characters')
+  email: z.string().email('Adresse e-mail invalide'),
+  password: z.string().min(6, 'Le mot de passe doit comporter au moins 6 caractères')
 })
 
 type Schema = z.output<typeof schema>
 
-function onSubmit(payload: FormSubmitEvent<Schema>) {
-  console.log('Submitted', payload)
+// Fonction de soumission
+async function onSubmit(payload: FormSubmitEvent<Schema>) {
+  try {
+    const res = await $fetch('/api/users/login', {
+      method: 'POST',
+      body: {
+        email: payload.data.email,
+        password: payload.data.password
+      }
+    })
+
+    if (res.success) {
+      toast.add({
+        title: 'Connexion réussie',
+        description: 'Bienvenue sur NeuraVPN 👋',
+        color: 'green'
+      })
+
+      // Sauvegarde du token et utilisateur
+      localStorage.setItem('token', res.token)
+      localStorage.setItem('user', JSON.stringify(res.user))
+
+      // Redirection vers le dashboard
+      router.push('/dashboard')
+    } else {
+      toast.add({
+        title: 'Erreur de connexion',
+        description: res.message || 'Vérifiez vos identifiants',
+        color: 'red'
+      })
+    }
+  } catch (error: any) {
+    toast.add({
+      title: 'Erreur',
+      description: error.statusMessage || 'Impossible de se connecter',
+      color: 'red'
+    })
+  }
 }
 </script>
 
@@ -54,26 +78,27 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
       <UAuthForm
         :schema="schema"
         :fields="fields"
-        :providers="providers"
-        title="Connexion"
+        title="Connexion à NeuraVPN"
         icon="material-symbols:person-2-rounded"
-        @submit="onSubmit"
         :submit="{
           label: 'Se connecter',
           color: 'primary',
           variant: 'solid'
         }"
+        @submit="onSubmit"
       >
         <template #description>
-          Pas de compte ? <ULink to="/register" class="text-primary font-medium">Créer un compte</ULink>.
+          Pas encore de compte ?
+          <ULink to="/register" class="text-primary font-medium">Créer un compte</ULink>.
         </template>
+
         <template #password-hint>
           <ULink to="#" class="text-primary font-medium" tabindex="-1">Mot de passe oublié ?</ULink>
         </template>
-        <template #validation>
-        </template>
+
         <template #footer>
-          En vous connectant, vous acceptez nos <ULink to="#" class="text-primary font-medium">Conditions d'utilisation</ULink>.
+          En vous connectant, vous acceptez nos
+          <ULink to="#" class="text-primary font-medium">Conditions d'utilisation</ULink>.
         </template>
       </UAuthForm>
     </UPageCard>
