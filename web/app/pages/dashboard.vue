@@ -32,8 +32,8 @@ function toggleVPN() {
       <!-- Icône dynamique -->
       <div class="flex justify-center mb-4">
         <UIcon
-          :name="vpnInfo.status === 'connected' ? 'material-symbols:lock-outline' : 'material-symbols:lock-open-outline'"
-          class="h-12 w-12"
+          :name="vpnInfo.status === 'connected' ? 'material-symbols:security-rounded' : 'material-symbols:power-plug-off-rounded'"
+          class="h-20 w-20"
           :class="vpnInfo.status === 'connected' ? 'text-primary' : 'text-neutral-400'"
         />
       </div>
